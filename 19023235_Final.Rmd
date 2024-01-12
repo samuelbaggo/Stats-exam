@@ -1,0 +1,369 @@
+---
+title: 'Exam Template: Statistical Inference'
+author: "19023235"
+date: ' Semester 1 Sep2023 group'
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+# do not change these options
+knitr::opts_chunk$set(echo = TRUE) # do not edit this line.
+knitr::opts_chunk$set(error = TRUE,comment=NA) # do not edit this line.
+```
+
+# Instructions to students
+
+Save this template as your studentID.Rmd; you will upload this file as part of your submission. Change the author information on line 3 of this file to your **student ID**. Do not change the authorship to your name.
+
+Your should knit this file to a document **Word** format. The Word document is what will be marked!
+
+Any changes that you make to the data (e.g. variable name changes) should be made entirely within R.
+
+The subsubsections labelled **Answer:** indicate where you should put in your written Answers. The template also provides blank code chunks for you to complete your Answers; you may choose to add additional chunks if required.
+
+This is an individual assessment: do not work with any other person during this exam. Text-matching software will be used on all submissions. 
+
+# Instructions for submission 
+
+You must submit your assignment before the stated deadline by electronic submission through Blackboard.
+
+- It is a good idea to save your work early and frequently to ensure you have no issues with the submission portal. Multiple submissions can be made to the portal, but only the final one will be accepted.
+
+- It is your responsibility to submit the exam in a format stipulated above. Your marks may be affected if your tutor cannot open or properly view your submission.
+
+- Do not leave submission to the very last minute. Always allow time in case of technical issues.
+
+- The date and time of your submission is taken from the Blackboard server and is recorded when your submission is complete, not when you click Submit.
+
+- It is essential that you check that you have submitted the correct file(s), and that each complete file was received. Submission receipts are accessed from the Coursework tab.
+
+There is no late submission permitted on this timed assessment. Ensure that you submit your submission in good time. Neither the module leader nor module team can accept late assessments, do not ask them to do so.
+
+
+
+# Background to the research
+
+The head of school for a four year degree course has provided you with some data based on student demographics, marks and graduate outcomes. 
+
+They have asked you if the data could reveal findings that may be relevant for monitoring student performance and outcomes.
+
+
+# Data instructions
+
+Your individual data set is accessed via Blackboard >>> Assessments >>> Dewis Data For Exam.
+
+You must only analyse the specified data. No other data is to be used for this assessment.
+
+All data manipulation and analyses must be done within R.
+
+# Data structure
+
+The variables collected for each student are:
+
+studentID – a unique student identifier issued to each student at the start of the course
+
+outcome – employment status one year after finishing the course (E1 = employed in a graduate role, E2 =Employed in a non-graduate role, Education = in full time further education, Unemployed = not yet employed)
+
+age – age at start of course
+
+gender – gender at start of course
+
+language – score given for student level of English proficiency determined as part of the application process for the course (minimum 0, maximum 10)
+
+feedback – score given by student for their satisfaction of the course when asked at the end of Year 4 (minimum 0, maximum 10)
+
+Mark1 - Mark for Year 1 (out of 100)
+
+Mark2 - Mark for Year 2 (out of 100)
+
+Mark3 - Mark for Year 3 (out of 100)
+
+Mark4 – Mark for Year 4 (out of 100)
+
+
+
+```{r libraries, include=FALSE}
+# load any required libraries / additional files here
+library(tidyverse)
+library(corrplot)
+library(MASS)
+library(performance)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+```
+
+
+# QUESTIONS START HERE
+
+# Question 1: Data Preparation 
+
+a) Ensure you have prepared your knitted Word document as per Instructions to Students
+
+b) You should load the data in R, describe and perform any actions with respect to:
+
+-any manipulation of the data structure
+
+-missing values
+
+-ensuring data is valid
+
+**(10 marks)**
+
+### Answer:
+```{r data}
+# load the dataset here
+ds <- read.csv("/Users/sambaggott/Desktop/contents-2.csv")
+```
+
+```{r Q1 }
+# further data preparation here
+ds
+summary(ds) #Initial summary of the data
+str(ds) #Checked the data structure
+
+ds
+boxplot(ds$age) #Created a boxplot of age and detected an outlier
+
+filtered_ds = subset (ds, age < 70) #Removed row with year of birth instead of age
+
+sum(is.na(filtered_ds2)) #Checked for number of missing values
+
+filtered_ds2 <- na.omit(filtered_ds) #Removed rows with missing values
+
+sum(is.na(filtered_ds2)) #Checked missing values have been removed
+
+summary(filtered_ds2)#Summary of clean data
+
+new_col_names <- c("StudentID", "Gender", "Age", "Outcome", "Language", "Feedback", "Mark1", "Mark2", "Mark3", "Mark4")
+colnames(filtered_ds2) <- new_col_names #Capitalized column names and renamed Year to Mark to improve formatting
+
+CleanDs <- filtered_ds2
+
+```
+
+
+# Question 2 
+
+A colleague suggests the following research question,
+
+ “do students perform differently in their final year relative to their performance at the start?”
+
+To assess this research question:
+
+- create a new variable for the difference between Year 4 mark and Year 1 Mark.
+
+- show and interpret a confidence interval for the mean difference, in context of the research question.
+
+**(12 marks)**
+
+### Answer: 
+I began by creating data frame and inputting the new variable created for the difference between year 4 and year 1 marks. From this, I then created a histogram to depict the distribution of this variable. Finally, I ran a linear regression model which revealed a 95% confidence interval for the true mean mark improvement. In other words, I can be 95% sure that the true mean mark difference for this group of students is within the range of 8.52 to 9.23.
+```{r Q2}
+CleanDs
+#Creates a new variable
+CleanDs
+MarkDiff <- CleanDs$Mark4 - CleanDs$Mark1
+
+#Creates linear model
+
+model1 <- lm(MarkDiff ~ 1, data = MarkDiff)
+
+confint(model1, level = 0.95)
+
+#Creates histogram
+hist(MarkDiff,
+     breaks = seq(min(MarkDiff), max(MarkDiff) + 5, by = 5),
+     col = "grey", border = "black",
+     main = "Student Mark Improvement Distribution",
+     xlab = "Mark Improvement (Year 4 Mark - Year 1 Mark)",
+     ylab = "Student Count")
+
+```
+
+
+
+# Question 3
+
+Another research question is suggested, 
+
+“is there a relationship between student marks across each of the years?”
+
+- Assess this research question by showing and interpreting the linear correlations between the marks for each of the four years.
+
+Marks are awarded for well-designed output, and the interpretation of the output.
+
+**(12 marks)**
+
+### Answer:
+The correlation coefficients indicate a moderate positive correlation (0.52) between marks 1 and 2. A moderate positive correlation (0.53) between Mark1 and Mark3. These first two correlations are the strongest which suggests that there is a more consistent relationship between these two marks, compared to the other marks. 
+
+A weak positive correlation was found between mark 1 and mark 4 (0.23) as well as between mark 2 and mark 3 (0.22). A moderate positive correlation (0.32) between mark 2 and mark 4. A weak positive correlation (0.15) between mark3 and mark4. This correlation is the weakest, which suggests that the relationship between marks 3 and 4 is less consistent.
+```{r Q3}
+CleanDs
+
+with(CleanDs, cor(Mark1, Mark2))
+with(CleanDs, cor.test(Mark1, Mark2))
+
+with(CleanDs, cor(Mark1, Mark3))
+with(CleanDs, cor.test(Mark1, Mark3))
+
+with(CleanDs, cor(Mark1, Mark4))
+with(CleanDs, cor.test(Mark1, Mark4))
+
+with(CleanDs, cor(Mark2, Mark3))
+with(CleanDs, cor.test(Mark2, Mark3))
+
+with(CleanDs, cor(Mark2, Mark4))
+with(CleanDs, cor.test(Mark2, Mark4))
+
+with(CleanDs, cor(Mark3, Mark4))
+with(CleanDs, cor.test(Mark3, Mark4))
+
+Correlation_table <- data.frame(
+  Pairs = c("Mark1 vs Mark2", "Mark1 vs Mark3", "Mark1 vs Mark4", "Mark2 vs Mark3", "Mark2 vs Mark4", "Mark3 vs Mark4"),
+  `Correlation Coefficients` = c(0.52, 0.53, 0.23, 0.22, 0.32, 0.15)
+)
+
+# Creates a table
+library(knitr)
+kable(
+  Correlation_table,
+  align = c("l", "c"),  # Aligns columns
+  caption = "Correlation Coefficients Between Variable Pairs",  # Adds a caption
+  col.names = c("Mark Pair", "Correlation Coefficient"),#Renames column headers
+)
+```
+
+
+# Question 4
+
+A further research question states, 
+
+“can the final year mark be predicted based on one mark for a previous year?”
+
+Produce simple linear regression with Year 4 mark as the dependent variable, and only one independent variable.
+
+Your answer should include:
+
+- justification for the choice of explanatory variable, including any additional supporting exploratory data analyses used to make the choice;
+
+- interpretation of the slope (gradient) coefficient;
+
+- comment on the r-square value, and the validity of model assumptions.
+
+
+**(23 marks)**
+
+### Answer:
+I decided to use mark 2 as my explanatory variable as it has the biggest correlation with mark 4. The coefficient for mark 2 is 0.32 which means for every one mark that mark 2 increases mark 4 increases by 0.32, on average. The standard error of 0.07 is relatively small, which indicates that the estimate of the coefficient is likely to be close to the true population value. The P value (0.41e-05) is extremely small, and as it is less than 0.05, we can reject the null hypothesis, which means that the coefficient for mark 2 is statistically significant. 
+```{r Q4}
+CleanDs
+plot(x = CleanDs$Mark2,
+     y = CleanDs$Mark4,
+     xlab = "Mark 2",
+     ylab = "Mark 4",
+     pch = 9,
+     main = "Correlation Between Mark 2 and Mark 4")
+
+# Linear regression model
+model1 <- lm(Mark4 ~ Mark2, data = CleanDs)
+
+# Adds a linear regression line
+abline(model1, col = "blue")
+
+# Adds lablels
+legend("topleft", legend = "Mark 2", pch = 9, col = "black")
+legend("topright", legend = "Mark 4", pch = 9, col = "black")
+
+model1 <- lm(Mark4 ~ Mark2, data = CleanDs)
+
+summary(model1)
+```
+
+
+
+
+# Question 5:  Report
+
+
+Clearly state one **alternative new** research question based on the full original data set supplied to you. Explain why this is a worthwhile research question to consider.
+
+You are required to write a short report for the client showing some analyses based only on the research question you have selected. 
+
+In your report you may wish to include a number of the following: exploratory data analyses; a hypothesis test; data modelling; discussion of limitations; how you could extend the research if given more time.
+
+To clarify, your answer to this question must be a report based on **your analyses of your own research question** arising from the data, which is not addressed in the questions above. This report should contain a maximum 5 outputs (i.e. graphics + tables) and a maximum of 500 words.
+
+
+**(35 marks)**
+
+### Answer:
+Hypothesis:
+
+Null Hypothesis (H0): There is no significant difference in mean mark 4 scores between students with high and low English language literacy scores.
+
+Alternative Hypothesis (H1): Students with higher English language literacy scores have significantly higher mean mark 4 scores compared to students with lower English language literacy scores.
+
+This research is important for a number of reasons. Firstly, if there is a significant relationship, then changes could be made to make the course resources more accessible for those who aren't as literate in English. Further to this, the results may help advise the teachers to make sure they are speaking clearly and not too quickly to aim to minimize the impact of poorer English skills. The importance of having lectures recorded could be highlighted, to allow people the opportunity to go through the content at their own pace. For students, if English literacy is a predictor of success on the course then it is important this is highlighted to them as it may motivate them to improve their English language skills. Support sessions could be implemented to help students who wish to work on this. 
+
+I began by running so summary statistics on the language variable. I needed to create a new variable that categorized students into two groups based on their English language literacy scores. Both the median and the mean were 5 so I decided to class students with a score of 5 or above as having 'high' levels of English language skills, and those with 4 or below as having 'low'. Next, I conducted a two sample t-test to compare the means of mark 4 between the two groups. The p value is 0.48 which is much greater than 0.05, which indicates there is not enough evidence to conclude that English language skills significantly impact mark 4, therefore I failed to reject the null hypothesis. However, this was a relatively small sample size and therefore there is not enough evidence to conclude for certain that English language skills don't affect students final mark.
+```{r Q5}
+CleanDs
+summary(CleanDs$Language)
+
+# Set the cutoff point for high and low proficiency
+cutoff_point <- 5
+
+# Created the new variable EnglishLanguageLiteracyGroup
+CleanDs$LanguageGroup <- ifelse(CleanDs$Language >= cutoff_point, "High", "Low")
+
+# Display the first few rows of the updated data frame
+head(CleanDs)
+
+CleanDs
+t_test_result <- t.test(Mark4 ~ LanguageGroup, data = CleanDs)
+print(t_test_result)
+
+#Creates a box plot
+boxplot(Mark4 ~ LanguageGroup, data = CleanDs, col = c("lightblue", "darkgreen"), 
+        main = "Boxplot of Final Marks by Literacy Group", 
+        xlab = "Literacy Group",
+        ylab = "Final Marks")    
+
+#Creates a new variable "bar_data"
+CleanDs
+bar_data <- aggregate(Mark4 ~ LanguageGroup, data = CleanDs, mean)
+
+# Create the bar chart
+barplot(bar_data$Mark4, names.arg = bar_data$LanguageGroup, col = c("lightblue", "darkgreen"),
+        main = "Mean Final Marks by Literacy Group", ylab = "Mean Final Marks")
+```
+
+
+
+# Question 6
+
+Describe how you have applied principles of reproducible research in this submission (maximum 100 words).
+
+Marks are awarded for identification of appropriate reproducible research principles, only if also evidenced throughout your submission that they have been applied.
+
+ 
+**(8 marks)**
+
+### Answer:
+
+
+
+
+
+
+# End matter - Session Information
+
+Do not edit this part. Make sure that you compile your document so that the information about your session (including software / package versions) is included in your submission.
+
+```{r}
+sessionInfo()
+```
